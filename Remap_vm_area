@@ -1,0 +1,11 @@
+How to change a read only page to read_write or change a read_write page to read only?
+	Given an address addr
+	1. Find the corresponding vma by calling the find_vma(mm, addr), then change its vm_flags
+	2. Walk the page table and use pte-apis to change the r/w bit
+		pte_wrprotect, pte_mkdirty, pte_mkwrite etc.
+	3. Then flush the tlb by calling flush_tlb_page(vma, addr)
+
+
+Note:
+	#1 vma will merge automatically every time mmap_region was called. So when calling the find_vma, it is neccessary to check the vm_start and vm_end of the vma, and split the vma by calling split_vma to extract the to-be-modified area. Otherwise, it will also change the vm_flags of the pages in the same vma.
+	#2 tlb_flush costs a lot. SPECCPU2006(@h264ref:400%, @perlbench:200%) has a great overhead. So try other methods to achieve the same goal.
