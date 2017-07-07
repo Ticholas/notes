@@ -1,0 +1,38 @@
+Enable Intel MPX
+	1. Rebuild the kernel with option to enable Intel MPX
+		Make menuconfig -- enable Intel_MPX....
+	2. Rebuild GCC 
+	    Using --enable-libmpx to configure the compiler.
+
+	To enable MPX related instruction or instrument in program. 
+	"-mmpx -fcheck-pointer-bounds" is need to be added to compile option string.
+	Other options could be find in 
+	https://gcc.gnu.org/wiki/Intel%20MPX%20support%20in%20the%20GCC%20compiler#Compiler_options
+
+
+
+	Sometimes we do not need checking instructions instrumented to all the pointer access(read/write). Because it causes a large overhead. We just want to insert checking code into where we prefer by inline assemble. So we need to enable the MPX manually.
+
+	When using gcc's compile option to enable MPX, gcc just link the program with two libs: libmpx.so and libmpxwrappers.so
+	When the libs are loaded, MPX is enabled at the beginning. Look into the code we will get to know how to enable MPX manually.
+
+
+Enable the Intel MPX manually.
+
+	1. Check the CPUID to see if the CPU supports Intel MPX. 
+		(Refer to Intel Developer Manual)
+			Also can use xgetbv(0) to get XCR0's value.
+	2. Allocate a memory region for Bound Directory. 
+		(2G for 64 bit system, refer to Intel Developer Manual)
+	3. Set the register bndcfgu/s using xrstor/xsave instruction.
+		Some of these procedures must be done in kernel mode, so a new syscall should be added.
+
+Add a syscall:
+	https://medium.com/@ssreehari/implementing-a-system-call-in-linux-kernel-4-7-1-6f98250a8c38#.1rbmp72vw This tutorial is simple and easy to understand.
+	If MPX is not enabled(enabled bit of register bndcfgu/s is not set), all instructions related to MPX(BNDMOV, BNDSTX etc.) are considered as NOP.
+	For Bndstx: bndstx bnd_reg, M. store the bnd_reg's bound to BndTable. M ---- (ptr, index, 0)
+
+Attention: Every bound directory entry(BDE) has a valid bit(0x1), it needs to be check before access the bndstx.
+			(This is only mentioned in the pseudo code of bndstx of Intel Developer Manual, and not mentioned at all in MPX introdution part.)
+		
+bndstx will use ptr to get the bndtable entry and store the upperbound and lowerbound in bnd_reg to the BTE. and store index to the BTE's pointer value BTE's reserve is always 0. (For current systems)
