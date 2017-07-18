@@ -1,3 +1,16 @@
 SSA -- static single assignment
 	is a property of IR, which requires each variable is exactly assigned once, and every variable is defined before it is used.
+	use variable renaming to achieve SSA
+	but when a basic block has more than one predecessor basic blocks, there will be a problem
+	when some variable exists in both basic blocks, so which one will the current basic block choose?
+	e.g. y <- x + 1 --> y <- x1 + 1 or y <- x2 + 1 ?
+	so => y <- phi(x1, x2)
 
+https://en.wikipedia.org/wiki/Static_single_assignment_form
+
+phi-node
+phi instruction:
+	phi 
+	<result> = phi <ty> [ <val0>, <label0>], ...
+	a value-label pair for each predecessor basic block
+		
