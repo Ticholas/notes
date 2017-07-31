@@ -1,0 +1,7 @@
+create a character device to communicate with the kernel.
+
+major_num = register_chrdev(...) to get the major number of the character device.
+
+You can register_die_notifier .. to handler some exception.
+
+do not forget to unregister all you have registered.
